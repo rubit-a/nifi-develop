@@ -68,9 +68,8 @@ jobs:
 
     - name: 설치 스크립트를 EC2로 전송
       run: |
-        # prod/script/nifi-setup.sh를 EC2로 전송
-        scp prod/script/nifi-setup.sh ec2-deploy:/tmp/
-        scp prod/script/enable-autostart.sh ec2-deploy:/tmp/
+        # prod/script 디렉토리 전체를 EC2로 전송
+        scp -r prod/script ec2-deploy:/tmp/nifi-install-scripts/
         echo "✓ Setup scripts uploaded to EC2"
 
     - name: NiFi 설치 확인 및 자동 설정
@@ -86,8 +85,8 @@ jobs:
             echo "⚠️  NiFi not found. Starting automatic installation..."
             echo ""
 
-            cd /tmp
-            chmod +x nifi-setup.sh enable-autostart.sh
+            cd /tmp/nifi-install-scripts/script
+            chmod +x *.sh
             ./nifi-setup.sh
 
             echo ""
