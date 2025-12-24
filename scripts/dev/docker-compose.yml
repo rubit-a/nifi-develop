@@ -1,0 +1,43 @@
+version: '3.8'
+
+services:
+  nifi:
+    image: apache/nifi:2.5.0
+    container_name: nifi-dev
+    ports:
+      - "8443:8443"
+    environment:
+      - NIFI_WEB_HTTPS_HOST=0.0.0.0
+      - NIFI_WEB_HTTPS_PORT=8443
+      - SINGLE_USER_CREDENTIALS_USERNAME=admin
+      - SINGLE_USER_CREDENTIALS_PASSWORD=ctsBtRBKHRAx69EqUghvvgEvjnaLjFEB
+    volumes:
+      # NAR 파일을 NiFi lib 디렉토리에 직접 마운트
+      - ../../nifi-custom-nar/target/nifi-custom-nar-1.0.0.nar:/opt/nifi/nifi-current/lib/nifi-custom-nar-1.0.0.nar:ro
+      # NiFi 데이터 영속화 (선택사항)
+      - nifi-database-repository:/opt/nifi/nifi-current/database_repository
+      - nifi-flowfile-repository:/opt/nifi/nifi-current/flowfile_repository
+      - nifi-content-repository:/opt/nifi/nifi-current/content_repository
+      - nifi-provenance-repository:/opt/nifi/nifi-current/provenance_repository
+      - nifi-state:/opt/nifi/nifi-current/state
+      - nifi-logs:/opt/nifi/nifi-current/logs
+    networks:
+      - nifi-network
+    healthcheck:
+      test: ["CMD", "curl", "-k", "-f", "https://localhost:8443/nifi"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+
+volumes:
+  nifi-database-repository:
+  nifi-flowfile-repository:
+  nifi-content-repository:
+  nifi-provenance-repository:
+  nifi-state:
+  nifi-logs:
+
+networks:
+  nifi-network:
+    driver: bridge

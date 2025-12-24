@@ -1,0 +1,15 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(chmod:*)",
+      "Bash(mvn clean package:*)",
+      "Bash(ls:*)",
+      "Bash(tree:*)",
+      "Bash(find:*)",
+      "Bash(mkdir:*)",
+      "Bash(/Users/ruby/Desktop/toy/nifi-deploy/scripts/dev/build.sh:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}
