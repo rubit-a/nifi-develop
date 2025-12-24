@@ -143,7 +143,7 @@ jobs:
 
           echo "[1/5] Updating systemd service file..."
           # systemd 서비스 파일 업데이트
-          sudo tee /etc/systemd/system/nifi.service > /dev/null << 'SERVICE_EOF'
+          cat > /tmp/nifi.service << 'SERVICE_EOF'
 [Unit]
 Description=Apache NiFi
 After=network.target
@@ -161,7 +161,7 @@ RestartSec=10
 [Install]
 WantedBy=multi-user.target
 SERVICE_EOF
-
+          sudo mv /tmp/nifi.service /etc/systemd/system/nifi.service
           sudo systemctl daemon-reload
           echo "✓ Service file updated"
 
