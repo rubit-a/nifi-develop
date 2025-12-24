@@ -143,25 +143,24 @@ jobs:
 
           echo "[1/5] Updating systemd service file..."
           # systemd 서비스 파일 업데이트
-          cat > /tmp/nifi.service << 'SERVICE_EOF'
-[Unit]
-Description=Apache NiFi
-After=network.target
-
-[Service]
-Type=forking
-User=$(whoami)
-Group=$(whoami)
-ExecStart=/opt/nifi/bin/nifi.sh start
-ExecStop=/opt/nifi/bin/nifi.sh stop
-ExecRestart=/opt/nifi/bin/nifi.sh restart
-Restart=on-failure
-RestartSec=10
-
-[Install]
-WantedBy=multi-user.target
-SERVICE_EOF
-          sudo mv /tmp/nifi.service /etc/systemd/system/nifi.service
+          {
+            echo "[Unit]"
+            echo "Description=Apache NiFi"
+            echo "After=network.target"
+            echo ""
+            echo "[Service]"
+            echo "Type=forking"
+            echo "User=$(whoami)"
+            echo "Group=$(whoami)"
+            echo "ExecStart=/opt/nifi/bin/nifi.sh start"
+            echo "ExecStop=/opt/nifi/bin/nifi.sh stop"
+            echo "ExecRestart=/opt/nifi/bin/nifi.sh restart"
+            echo "Restart=on-failure"
+            echo "RestartSec=10"
+            echo ""
+            echo "[Install]"
+            echo "WantedBy=multi-user.target"
+          } | sudo tee /etc/systemd/system/nifi.service > /dev/null
           sudo systemctl daemon-reload
           echo "✓ Service file updated"
 
