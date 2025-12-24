@@ -6,9 +6,9 @@ After=network.target
 Type=forking
 User=ec2-user
 Group=ec2-user
-ExecStart=/opt/nifi/bin/nifi-start.sh
+ExecStart=/opt/nifi/bin/nifi.sh start
 ExecStop=/opt/nifi/bin/nifi.sh stop
-ExecReload=/opt/nifi/bin/nifi.sh restart
+ExecRestart=/opt/nifi/bin/nifi.sh restart
 Restart=on-failure
 RestartSec=10
 
