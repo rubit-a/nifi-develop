@@ -1,0 +1,173 @@
+name: Deploy to EC2
+
+on:
+  push:
+    branches:
+      - master  # master 브랜치에 푸시될 때 자동 배포
+  workflow_dispatch:  # 수동 배포도 가능하도록 설정
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: 코드 체크아웃
+      uses: actions/checkout@v4
+
+    - name: JDK 21 설정
+      uses: actions/setup-java@v4
+      with:
+        distribution: 'temurin'
+        java-version: '21'
+        cache: 'maven'
+
+    - name: Maven 빌드 (NAR 생성)
+      run: |
+        echo "========================================="
+        echo " Building Custom NiFi NAR"
+        echo "========================================="
+        mvn clean package -DskipTests
+
+        # 빌드된 NAR 파일 확인
+        echo ""
+        echo "Build artifacts:"
+        ls -lh nifi-custom-nar/target/*.nar
+
+    - name: EC2 배포 준비
+      run: |
+        # prod/nar 디렉토리에 NAR 파일 복사
+        mkdir -p prod/nar
+        cp nifi-custom-nar/target/nifi-custom-nar-1.0.0.nar prod/nar/
+        echo "✓ NAR file prepared for deployment"
+
+    - name: SSH 키 설정
+      env:
+        EC2_SSH_KEY: ${{ secrets.EC2_SSH_KEY }}
+      run: |
+        mkdir -p ~/.ssh
+        echo "$EC2_SSH_KEY" > ~/.ssh/id_rsa
+        chmod 600 ~/.ssh/id_rsa
+
+        # SSH 설정 파일 생성 (보안 및 연결 안정성 향상)
+        cat >> ~/.ssh/config << EOF
+        Host ec2-deploy
+          HostName ${{ secrets.EC2_HOST }}
+          User ${{ secrets.EC2_USER }}
+          IdentityFile ~/.ssh/id_rsa
+          StrictHostKeyChecking no
+          UserKnownHostsFile /dev/null
+          ConnectTimeout 30
+          ServerAliveInterval 60
+        EOF
+        chmod 600 ~/.ssh/config
+
+    - name: EC2 연결 테스트
+      run: |
+        echo "Testing SSH connection to EC2..."
+        ssh ec2-deploy "echo 'SSH connection successful'"
+
+    - name: 설치 스크립트를 EC2로 전송
+      run: |
+        # prod/script/nifi-setup.sh를 EC2로 전송
+        scp prod/script/nifi-setup.sh ec2-deploy:/tmp/
+        scp prod/script/enable-autostart.sh ec2-deploy:/tmp/
+        echo "✓ Setup scripts uploaded to EC2"
+
+    - name: NiFi 설치 확인 및 자동 설정
+      run: |
+        echo "========================================="
+        echo " Checking NiFi Installation on EC2"
+        echo "========================================="
+
+        ssh ec2-deploy 'bash -s' << 'ENDSSH'
+          set -e
+
+          if [ ! -d "/opt/nifi" ]; then
+            echo "⚠️  NiFi not found. Starting automatic installation..."
+            echo ""
+
+            cd /tmp
+            chmod +x nifi-setup.sh enable-autostart.sh
+            ./nifi-setup.sh
+
+            echo ""
+            echo "✅ NiFi has been installed and configured successfully!"
+          else
+            echo "✅ NiFi is already installed at /opt/nifi"
+          fi
+
+          echo ""
+          echo "NiFi Status:"
+          if systemctl is-active --quiet nifi; then
+            echo "✅ NiFi is running"
+          else
+            echo "⚠️  NiFi is not running. Starting..."
+            sudo systemctl start nifi
+          fi
+        ENDSSH
+
+    - name: EC2에 NAR 파일 배포
+      env:
+        EC2_USER: ${{ secrets.EC2_USER }}
+      run: |
+        echo "========================================="
+        echo " Deploying to EC2: ${{ secrets.EC2_HOST }}"
+        echo "========================================="
+
+        # NAR 파일을 EC2로 전송
+        scp prod/nar/nifi-custom-nar-1.0.0.nar ec2-deploy:/tmp/
+        echo "✓ NAR file uploaded to EC2"
+
+        # EC2에서 배포 스크립트 실행
+        ssh ec2-deploy bash << 'ENDSSH'
+          set -e
+
+          echo "[1/4] Stopping NiFi..."
+          sudo systemctl stop nifi || true
+
+          echo "[2/4] Backing up existing NAR..."
+          NAR_DIR="/opt/nifi/lib"
+          BACKUP_DIR="/opt/nifi/lib/backup-$(date +%Y%m%d-%H%M%S)"
+
+          if [ -f "${NAR_DIR}/nifi-custom-nar-1.0.0.nar" ]; then
+            sudo mkdir -p ${BACKUP_DIR}
+            sudo mv ${NAR_DIR}/nifi-custom-nar-*.nar ${BACKUP_DIR}/ 2>/dev/null || true
+            echo "✓ Previous NAR backed up to ${BACKUP_DIR}"
+          fi
+
+          echo "[3/4] Installing new NAR..."
+          sudo mv /tmp/nifi-custom-nar-1.0.0.nar ${NAR_DIR}/
+          sudo chown $(whoami):$(whoami) ${NAR_DIR}/nifi-custom-nar-1.0.0.nar
+          echo "✓ New NAR installed"
+
+          echo "[4/4] Starting NiFi..."
+          sudo systemctl start nifi
+
+          echo ""
+          echo "========================================="
+          echo " Deployment completed successfully!"
+          echo "========================================="
+          echo ""
+          echo "NiFi Status:"
+          sudo systemctl status nifi --no-pager | head -n 10
+        ENDSSH
+
+        echo "✅ Deployment completed!"
+
+    - name: SSH 키 정리
+      if: always()
+      run: |
+        rm -f ~/.ssh/id_rsa ~/.ssh/config
+        echo "✓ SSH credentials cleaned up"
+
+    - name: 배포 결과 알림
+      if: always()
+      run: |
+        if [ "${{ job.status }}" == "success" ]; then
+          echo "✅ 배포 성공!"
+          echo "EC2 Host: ${{ secrets.EC2_HOST }}"
+          echo "NAR 파일: nifi-custom-nar-1.0.0.nar"
+        else
+          echo "❌ 배포 실패"
+          echo "배포 중 오류가 발생했습니다. Actions 로그를 확인해주세요."
+        fi
