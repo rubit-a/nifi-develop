@@ -104,7 +104,24 @@ jobs:
             echo "✅ NiFi is running"
           else
             echo "⚠️  NiFi is not running. Starting..."
-            sudo systemctl start nifi
+            if ! sudo systemctl start nifi; then
+              echo ""
+              echo "❌ Failed to start NiFi. Checking logs..."
+              echo ""
+              echo "=== systemctl status ==="
+              sudo systemctl status nifi --no-pager -l || true
+              echo ""
+              echo "=== NiFi bootstrap log (last 50 lines) ==="
+              sudo tail -50 /opt/nifi/logs/nifi-bootstrap.log 2>/dev/null || echo "No bootstrap log found"
+              echo ""
+              echo "=== NiFi app log (last 50 lines) ==="
+              sudo tail -50 /opt/nifi/logs/nifi-app.log 2>/dev/null || echo "No app log found"
+              echo ""
+              echo "⚠️  Continuing deployment despite NiFi start failure..."
+              echo "   NiFi may need more time to start. Check logs after deployment."
+            else
+              echo "✅ NiFi started successfully"
+            fi
           fi
         ENDSSH
 
