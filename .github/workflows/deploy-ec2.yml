@@ -164,14 +164,42 @@ jobs:
             echo ""
             echo "❌ Failed to start NiFi. Checking logs..."
             echo ""
-            echo "=== systemctl status ==="
-            sudo systemctl status nifi --no-pager -l
+
+            echo "=== Java version ==="
+            java -version 2>&1
+
             echo ""
-            echo "=== NiFi bootstrap log (last 50 lines) ==="
-            sudo tail -50 /opt/nifi/logs/nifi-bootstrap.log || echo "No bootstrap log found"
+            echo "=== NiFi startup script check ==="
+            ls -l /opt/nifi/bin/nifi.sh
+
             echo ""
-            echo "=== NiFi app log (last 50 lines) ==="
-            sudo tail -50 /opt/nifi/logs/nifi-app.log || echo "No app log found"
+            echo "=== systemctl status (full) ==="
+            sudo systemctl status nifi --no-pager --full --lines=50 2>&1 || true
+
+            echo ""
+            echo "=== journalctl (last 100 lines) ==="
+            sudo journalctl -u nifi --no-pager -n 100 2>&1 || true
+
+            echo ""
+            echo "=== NiFi bootstrap log ==="
+            if [ -f /opt/nifi/logs/nifi-bootstrap.log ]; then
+              tail -100 /opt/nifi/logs/nifi-bootstrap.log
+            else
+              echo "No bootstrap log found"
+            fi
+
+            echo ""
+            echo "=== NiFi app log ==="
+            if [ -f /opt/nifi/logs/nifi-app.log ]; then
+              tail -100 /opt/nifi/logs/nifi-app.log
+            else
+              echo "No app log found"
+            fi
+
+            echo ""
+            echo "=== Checking NiFi process ==="
+            ps aux | grep nifi | grep -v grep || echo "No NiFi process found"
+
             exit 1
           fi
 
