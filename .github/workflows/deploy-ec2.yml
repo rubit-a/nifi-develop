@@ -143,7 +143,20 @@ jobs:
           echo "✓ New NAR installed"
 
           echo "[4/4] Starting NiFi..."
-          sudo systemctl start nifi
+          if ! sudo systemctl start nifi; then
+            echo ""
+            echo "❌ Failed to start NiFi. Checking logs..."
+            echo ""
+            echo "=== systemctl status ==="
+            sudo systemctl status nifi --no-pager -l
+            echo ""
+            echo "=== NiFi bootstrap log (last 50 lines) ==="
+            sudo tail -50 /opt/nifi/logs/nifi-bootstrap.log || echo "No bootstrap log found"
+            echo ""
+            echo "=== NiFi app log (last 50 lines) ==="
+            sudo tail -50 /opt/nifi/logs/nifi-app.log || echo "No app log found"
+            exit 1
+          fi
 
           echo ""
           echo "========================================="
