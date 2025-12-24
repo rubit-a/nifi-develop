@@ -141,10 +141,34 @@ jobs:
         ssh ec2-deploy bash << 'ENDSSH'
           set -e
 
-          echo "[1/4] Stopping NiFi..."
+          echo "[1/5] Updating systemd service file..."
+          # systemd 서비스 파일 업데이트
+          sudo tee /etc/systemd/system/nifi.service > /dev/null << 'SERVICE_EOF'
+[Unit]
+Description=Apache NiFi
+After=network.target
+
+[Service]
+Type=forking
+User=$(whoami)
+Group=$(whoami)
+ExecStart=/opt/nifi/bin/nifi.sh start
+ExecStop=/opt/nifi/bin/nifi.sh stop
+ExecRestart=/opt/nifi/bin/nifi.sh restart
+Restart=on-failure
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target
+SERVICE_EOF
+
+          sudo systemctl daemon-reload
+          echo "✓ Service file updated"
+
+          echo "[2/5] Stopping NiFi..."
           sudo systemctl stop nifi || true
 
-          echo "[2/4] Backing up existing NAR..."
+          echo "[3/5] Backing up existing NAR..."
           NAR_DIR="/opt/nifi/lib"
           BACKUP_DIR="/opt/nifi/lib/backup-$(date +%Y%m%d-%H%M%S)"
 
