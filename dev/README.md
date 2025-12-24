@@ -203,15 +203,11 @@ nifi-custom-processors/src/test/java/com/example/MyProcessorTest.java
 ### 4. NiFi 웹 UI 접속
 
 ```
-URL: https://localhost:8443/nifi
+URL: http://localhost:8080/nifi
 
 인증 정보:
-- Username: admin
-- Password: ctsBtRBKHRAx69EqUghvvgEvjnaLjFEB
+- 없음 (HTTP 모드, 인증 비활성화)
 ```
-
-> **참고**: 자체 서명 인증서 사용으로 보안 경고가 나타날 수 있습니다.
-> "고급" → "안전하지 않음(localhost)(으)로 이동"을 클릭하세요.
 
 ---
 
@@ -326,13 +322,10 @@ services:
     image: apache/nifi:2.5.0
     container_name: nifi-dev
     ports:
-      - "8443:8443"                    # HTTPS 포트
+      - "8080:8080"                    # HTTP 포트
     environment:
-      - NIFI_WEB_HTTPS_HOST=0.0.0.0
-      - NIFI_WEB_HTTPS_PORT=8443
-      - NIFI_WEB_PROXY_HOST=localhost:8443
-      - SINGLE_USER_CREDENTIALS_USERNAME=admin
-      - SINGLE_USER_CREDENTIALS_PASSWORD=ctsBtRBKHRAx69EqUghvvgEvjnaLjFEB
+      - NIFI_WEB_HTTP_HOST=0.0.0.0
+      - NIFI_WEB_HTTP_PORT=8080
     volumes:
       # NAR 파일 마운트
       - ../../nifi-custom-nar/target/nifi-custom-nar-1.0.0.nar:/opt/nifi/nifi-current/lib/nifi-custom-nar-1.0.0.nar:ro
@@ -349,10 +342,8 @@ services:
 
 | 변수 | 값 | 설명 |
 |------|-----|------|
-| `NIFI_WEB_HTTPS_PORT` | 8443 | HTTPS 포트 |
-| `NIFI_WEB_PROXY_HOST` | localhost:8443 | 허용할 프록시 호스트 (SNI 검증) |
-| `SINGLE_USER_CREDENTIALS_USERNAME` | admin | 관리자 계정 |
-| `SINGLE_USER_CREDENTIALS_PASSWORD` | (자동생성) | 관리자 비밀번호 |
+| `NIFI_WEB_HTTP_PORT` | 8080 | HTTP 포트 |
+| `NIFI_WEB_HTTP_HOST` | 0.0.0.0 | 바인딩 호스트 |
 
 ---
 
@@ -365,7 +356,7 @@ services:
 ```gitignore
 # Maven 빌드 결과물
 target/
-.m2-docker/
+../.m2-docker/
 
 # NAR 파일
 nifi-custom-nar/target/*.nar
@@ -425,18 +416,18 @@ sudo usermod -aG docker $USER
 
 **문제:**
 ```
-Error: Port 8443 is already in use
+Error: Port 8080 is already in use
 ```
 
 **해결:**
 ```bash
-# 8443 포트 사용 중인 프로세스 확인
-lsof -i :8443
+# 8080 포트 사용 중인 프로세스 확인
+lsof -i :8080
 
 # 또는 다른 포트로 변경
 # docker-compose.yml에서 포트 수정
 ports:
-  - "9443:8443"
+  - "9080:8080"
 ```
 
 ### 3. NAR 파일이 NiFi에 로드되지 않음
@@ -481,15 +472,14 @@ ping repo.maven.apache.org
 # .m2-docker/settings.xml 생성
 ```
 
-### 5. HTTPS 인증서 경고
+### 5. HTTP 보안 주의
 
 **문제:**
-브라우저에서 "Your connection is not private" 경고
+HTTP 모드라 인증이 비활성화됨
 
 **해결:**
-- 정상 동작입니다 (자체 서명 인증서 사용)
-- "고급" → "localhost(으)로 이동" 클릭
-- 또는 브라우저에서 인증서 예외 추가
+- 개발 환경에서만 사용 권장
+- 운영 환경은 HTTPS 또는 리버스 프록시 권장
 
 ### 6. 빌드 속도가 느림
 

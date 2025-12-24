@@ -5,13 +5,15 @@ services:
     image: apache/nifi:2.5.0
     container_name: nifi-dev
     ports:
-      - "8443:8443"
+      - "8080:8080"
     environment:
-      - NIFI_WEB_HTTPS_HOST=0.0.0.0
-      - NIFI_WEB_HTTPS_PORT=8443
-      - SINGLE_USER_CREDENTIALS_USERNAME=admin
-      - SINGLE_USER_CREDENTIALS_PASSWORD=ctsBtRBKHRAx69EqUghvvgEvjnaLjFEB
+      - AUTH=
+      - NIFI_WEB_HTTP_HOST=0.0.0.0
+      - NIFI_WEB_HTTP_PORT=8080
+    entrypoint: ["/opt/nifi/custom-scripts/start-nifi-http.sh"]   # nifi HTTP 설정. HTTPS 미사용
     volumes:
+      # 커스텀 시작 스크립트 마운트
+      - ./start-nifi-http.sh:/opt/nifi/custom-scripts/start-nifi-http.sh:ro
       # NAR 파일을 NiFi lib 디렉토리에 직접 마운트
       - ../../nifi-custom-nar/target/nifi-custom-nar-1.0.0.nar:/opt/nifi/nifi-current/lib/nifi-custom-nar-1.0.0.nar:ro
       # NiFi 데이터 영속화 (선택사항)
@@ -24,7 +26,7 @@ services:
     networks:
       - nifi-network
     healthcheck:
-      test: ["CMD", "curl", "-k", "-f", "https://localhost:8443/nifi"]
+      test: ["CMD", "curl", "-f", "http://localhost:8080/nifi"]
       interval: 30s
       timeout: 10s
       retries: 5

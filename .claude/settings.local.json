@@ -7,7 +7,10 @@
       "Bash(tree:*)",
       "Bash(find:*)",
       "Bash(mkdir:*)",
-      "Bash(/Users/ruby/Desktop/toy/nifi-deploy/scripts/dev/build.sh:*)"
+      "Bash(/Users/ruby/Desktop/toy/nifi-deploy/scripts/dev/build.sh:*)",
+      "Bash(./dev/script/build-nar.sh:*)",
+      "WebFetch(domain:downloads.apache.org)",
+      "WebFetch(domain:repo.maven.apache.org)"
     ],
     "deny": [],
     "ask": []

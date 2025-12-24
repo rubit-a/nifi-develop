@@ -36,3 +36,6 @@ nifi-custom-nar/target/*.nar
 
 # pem
 *.pem
+
+# nar
+prod/nar/*

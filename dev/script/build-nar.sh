@@ -57,6 +57,13 @@ if [ "$USE_DOCKER" = true ]; then
     echo " Build completed successfully!"
     echo "========================================="
 
+    # prod/nar 디렉토리에 NAR 파일 복사
+    echo ""
+    echo "Copying NAR to prod/nar directory..."
+    mkdir -p "${PROJECT_ROOT}/prod/nar"
+    cp "${PROJECT_ROOT}/nifi-custom-nar/target/nifi-custom-nar-1.0.0.nar" "${PROJECT_ROOT}/prod/nar/"
+    echo "✓ NAR copied to prod/nar/nifi-custom-nar-1.0.0.nar"
+
 # 로컬 Maven 빌드 (폴백)
 else
     echo "⚠️  Docker not available, using local Maven"
@@ -127,4 +134,11 @@ else
     echo "========================================="
     echo " Build completed successfully!"
     echo "========================================="
+
+    # prod/nar 디렉토리에 NAR 파일 복사
+    echo ""
+    echo "Copying NAR to prod/nar directory..."
+    mkdir -p "${PROJECT_ROOT}/prod/nar"
+    cp "${PROJECT_ROOT}/nifi-custom-nar/target/nifi-custom-nar-1.0.0.nar" "${PROJECT_ROOT}/prod/nar/"
+    echo "✓ NAR copied to prod/nar/nifi-custom-nar-1.0.0.nar"
 fi

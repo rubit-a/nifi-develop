@@ -43,11 +43,7 @@ case $COMMAND in
     echo "========================================="
     echo ""
     echo "Web UI will be available at:"
-    echo "  https://localhost:8443/nifi"
-    echo ""
-    echo "Credentials:"
-    echo "  Username: admin"
-    echo "  Password: ctsBtRBKHRAx69EqUghvvgEvjnaLjFEB"
+    echo "  http://localhost:8080/nifi"
     echo ""
     echo "⏳ NiFi may take 1-2 minutes to fully start."
     echo ""
@@ -70,7 +66,7 @@ case $COMMAND in
     $DOCKER_COMPOSE restart
     echo "✅ NiFi restarted"
     echo ""
-    echo "Web UI: https://localhost:8443/nifi"
+    echo "Web UI: http://localhost:8080/nifi"
     ;;
 
   reload)
@@ -92,7 +88,7 @@ case $COMMAND in
     echo "✅ NAR rebuilt and NiFi restarted"
     echo "⏳ Wait 30-60 seconds for NiFi to reload"
     echo ""
-    echo "Web UI: https://localhost:8443/nifi"
+    echo "Web UI: http://localhost:8080/nifi"
     ;;
 
   logs)
@@ -117,7 +113,7 @@ case $COMMAND in
     $DOCKER_COMPOSE ps
     echo ""
     echo "To check if NiFi is ready:"
-    echo "  curl -k https://localhost:8443/nifi"
+    echo "  curl -f http://localhost:8080/nifi"
     ;;
 
   shell)
